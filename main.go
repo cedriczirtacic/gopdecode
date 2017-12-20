@@ -17,19 +17,19 @@ const (
 )
 
 var (
-    syntax uint8 = SYN_INTEL
-    output *os.File
-    out string
+	syntax uint8 = SYN_INTEL
+	output *os.File
+	out    string
 )
 
 func output_file(f string) *os.File {
-    fd, err := os.OpenFile(f, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644)
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "%s\n", err)
-        return nil
-    }
+	fd, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return nil
+	}
 
-    return fd
+	return fd
 }
 
 func main() {
@@ -56,11 +56,11 @@ func main() {
 					fmt.Fprintf(os.Stderr, "Error: unknown flavor.\n")
 				}
 				break
-            case "set output":
-                output = output_file(set[1])
-                if output != nil {
-                    defer output.Close()
-                }
+			case "set output":
+				output = output_file(set[1])
+				if output != nil {
+					defer output.Close()
+				}
 			default:
 				fmt.Fprintf(os.Stderr, "Error: couldn't set an option.\n")
 			}
@@ -87,11 +87,11 @@ func main() {
 		case SYN_GO:
 			out = fmt.Sprintf("%s\n", x86asm.GoSyntax(inst, 0, nil))
 		}
-        if output == nil {
-            print(out)
-        } else {
-            output.WriteString(out)
-        }
+		if output == nil {
+			print(out)
+		} else {
+			output.WriteString(out)
+		}
 	}
 
 }
