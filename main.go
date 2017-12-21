@@ -7,19 +7,23 @@ import (
 	"fmt"
 	"golang.org/x/arch/x86/x86asm"
 	"os"
+	"regexp"
 	"strings"
 )
 
+// flavors
 const (
 	SYN_INTEL = (0 << 1)
 	SYN_ATT   = (1 << 1)
 	SYN_GO    = (2 << 1)
 )
 
+// main options
 var (
-	syntax uint8 = SYN_INTEL
-	output *os.File
-	out    string
+	syntax   uint8 = SYN_INTEL
+	output   *os.File
+	out      string
+	prettify bool = false
 )
 
 func output_file(f string) *os.File {
@@ -30,6 +34,27 @@ func output_file(f string) *os.File {
 	}
 
 	return fd
+}
+
+func pretty_print(s string) {
+	//colors
+	var (
+		Normal = 0
+		Red    = 31 // operands
+		Blue   = 34 // instruction
+	)
+	var escape = []byte{0x1b}
+	var rgex = regexp.MustCompile(`([^\s\t]+?)[\s\t]+(.+)*`)
+
+	matches := rgex.FindStringSubmatch(s)
+
+	if len(matches) > 0 {
+		fmt.Printf("%s[%dm%s ", escape, Blue, matches[1])
+		if matches[2] != "" {
+			fmt.Printf("%s[%dm%s", escape, Red, matches[2])
+		}
+		fmt.Printf("%s[%dm\n", escape, Normal)
+	}
 }
 
 func main() {
@@ -61,6 +86,14 @@ func main() {
 				if output != nil {
 					defer output.Close()
 				}
+			case "set colors":
+				if set[1] == "true" {
+					prettify = true
+				} else if set[1] == "false" {
+					prettify = false
+				} else {
+					fmt.Fprintf(os.Stderr, "Error: unknown option (boolean).\n")
+				}
 			default:
 				fmt.Fprintf(os.Stderr, "Error: couldn't set an option.\n")
 			}
@@ -88,7 +121,11 @@ func main() {
 			out = fmt.Sprintf("%s\n", x86asm.GoSyntax(inst, 0, nil))
 		}
 		if output == nil {
-			print(out)
+			if !prettify {
+				print(out)
+			} else {
+				pretty_print(out)
+			}
 		} else {
 			output.WriteString(out)
 		}
