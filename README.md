@@ -16,6 +16,7 @@ $
 * `q` or `quit`: quit the application.
 * ```set flavor=[att|go|intel]```: change output syntax (AT&T, Intel or Go Assembly).
 * ```set output=(filepath)```: save output to file.
+* ```set colors=[true|false]```: "pretty" print.
 
 ## Credits
 Based on [m2elf](https://github.com/XlogicX/m2elf)'s decoding functionality.
