@@ -76,7 +76,7 @@ func Create(path string /*code *[]byte*/) (*os.File, error) {
 	//var dummy  = []byte{0x30,0xc0,0xb0,0x3c,0x0f,0x05}
 	//_, _ = fd.Write(dummy)
 
-	fmt.Printf("Custom ELF file '%s' created.\n", path)
+	fmt.Printf("Custom ELF file '%s' created. All written opcodes will go there!\n", path)
 	return fd, nil
 }
 
