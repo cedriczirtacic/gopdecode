@@ -9,6 +9,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"./create_elf"
 )
 
 // flavors
@@ -20,10 +22,11 @@ const (
 
 // main options
 var (
-	syntax   uint8 = SYN_INTEL
-	output   *os.File
-	out      string
-	prettify bool = false
+	syntax     uint8 = SYN_INTEL
+	output     *os.File
+	out        string
+	prettify   bool = false
+	custom_elf *os.File
 )
 
 func output_file(f string) *os.File {
@@ -67,6 +70,12 @@ func main() {
 			continue
 		} else if input_codes == "quit" || input_codes == "q" {
 			os.Exit(0)
+		} else if len(input_codes) > 6 && input_codes[0:6] == "create" {
+			create := strings.Split(input_codes, " ")
+			custom_elf, _ = create_elf.Create(create[1])
+			defer custom_elf.Close()
+
+			continue
 		} else if len(input_codes) > 3 && input_codes[0:3] == "set" {
 			set := strings.Split(input_codes, "=")
 			switch set[0] {
@@ -111,6 +120,17 @@ func main() {
 				j++
 			}
 		}
+
+		// if we are creating a custom ELF binary
+		// then write all opcodes directly to the
+		// specified file with create command
+		if custom_elf != nil {
+			err := create_elf.Write(custom_elf, opcodes)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: unable to write to custom ELF.\n")
+			}
+		}
+
 		inst, _ := x86asm.Decode(opcodes, 64)
 		switch syntax {
 		case SYN_ATT:
