@@ -19,7 +19,7 @@ type custom_elf_headers struct {
 	program_header elf.Prog64
 }
 
-func Create(path string /*code *[]byte*/) (*os.File, error) {
+func Create(path string) (*os.File, error) {
 	fd, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
