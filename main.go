@@ -4,6 +4,7 @@ package main
 import (
 	"bufio"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"golang.org/x/arch/x86/x86asm"
 	"os"
@@ -22,12 +23,21 @@ const (
 
 // main options
 var (
-	syntax     uint8 = SYN_INTEL
-	output     *os.File
-	out        string
-	prettify   bool = false
-	custom_elf *os.File
+	syntax      uint8 = SYN_INTEL
+	output      *os.File
+	out         string
+	json_output bool = false
+	prettify    bool = false
+	custom_elf  *os.File
+	rgex        = regexp.MustCompile(`([^\s\t]+?)[\s\t]+(.+)*`)
 )
+
+// json output struct
+type json_opcode struct {
+	Len  int      `json:"length"`
+	Inst string   `json:"instruction"`
+	Args []string `json:"args"`
+}
 
 func output_file(f string) *os.File {
 	fd, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
@@ -47,7 +57,6 @@ func pretty_print(s string) {
 		Blue   = 34 // instruction
 	)
 	var escape = []byte{0x1b}
-	var rgex = regexp.MustCompile(`([^\s\t]+?)[\s\t]+(.+)*`)
 
 	matches := rgex.FindStringSubmatch(s)
 
@@ -79,6 +88,12 @@ func main() {
 		} else if len(input_codes) > 3 && input_codes[0:3] == "set" {
 			set := strings.Split(input_codes, "=")
 			switch set[0] {
+			case "set json":
+				if !json_output {
+					json_output = true
+				} else {
+					json_output = false
+				}
 			case "set flavor":
 				if set[1] == "intel" {
 					syntax = SYN_INTEL
@@ -96,12 +111,10 @@ func main() {
 					defer output.Close()
 				}
 			case "set colors":
-				if set[1] == "true" {
+				if !prettify {
 					prettify = true
-				} else if set[1] == "false" {
-					prettify = false
 				} else {
-					fmt.Fprintf(os.Stderr, "Error: unknown option (boolean).\n")
+					prettify = false
 				}
 			default:
 				fmt.Fprintf(os.Stderr, "Error: couldn't set an option.\n")
@@ -132,6 +145,14 @@ func main() {
 		}
 
 		inst, _ := x86asm.Decode(opcodes, 64)
+
+		// inst.Opcode > 0 to be a valid opcode
+		if inst.Opcode == 0 {
+			println("Wrong or invalid opcode")
+			continue
+		}
+
+		// get parsed data
 		switch syntax {
 		case SYN_ATT:
 			out = fmt.Sprintf("%s\n", x86asm.GNUSyntax(inst, 0, nil))
@@ -140,14 +161,39 @@ func main() {
 		case SYN_GO:
 			out = fmt.Sprintf("%s\n", x86asm.GoSyntax(inst, 0, nil))
 		}
-		if output == nil {
-			if !prettify {
-				print(out)
-			} else {
-				pretty_print(out)
+
+		if json_output {
+			// JSON output
+			op_data := &json_opcode{
+				Len: inst.Len,
 			}
+
+			s := rgex.FindAllStringSubmatch(out, -1)
+			op_data.Inst = s[0][1]
+
+			if s[0][2] != "" {
+				a := strings.Split(s[0][2], ",")
+				for _, b := range a {
+					if b[0:1] == " " {
+						op_data.Args = append(op_data.Args, b[1:])
+					} else {
+						op_data.Args = append(op_data.Args, b)
+					}
+				}
+			}
+			json_data, _ := json.MarshalIndent(op_data, "", "    ")
+			println(string(json_data))
 		} else {
-			output.WriteString(out)
+			// NORMAL output
+			if output == nil {
+				if !prettify {
+					print(out)
+				} else {
+					pretty_print(out)
+				}
+			} else {
+				output.WriteString(out)
+			}
 		}
 	}
 
