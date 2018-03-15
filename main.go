@@ -89,11 +89,15 @@ func main() {
 			set := strings.Split(input_codes, "=")
 			switch set[0] {
 			case "set json":
+                fmt.Printf("json = ")
 				if !json_output {
 					json_output = true
+                    fmt.Printf("true")
 				} else {
 					json_output = false
+                    fmt.Printf("false")
 				}
+                println()
 			case "set flavor":
 				if set[1] == "intel" {
 					syntax = SYN_INTEL
@@ -111,11 +115,15 @@ func main() {
 					defer output.Close()
 				}
 			case "set colors":
+                fmt.Printf("colors = ")
 				if !prettify {
 					prettify = true
+                    fmt.Printf("true")
 				} else {
 					prettify = false
+                    fmt.Printf("false")
 				}
+                println()
 			default:
 				fmt.Fprintf(os.Stderr, "Error: couldn't set an option.\n")
 			}
