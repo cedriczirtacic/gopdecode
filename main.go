@@ -9,13 +9,19 @@ import (
 	"golang.org/x/arch/x86/x86asm"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"./create_elf"
 )
 
-// flavors
 const (
+	// architecture modes
+	MOD_16 = (1 << 4)
+	MOD_32 = (MOD_16 << 1)
+	MOD_64 = (MOD_32 << 1)
+
+	// flavors
 	SYN_INTEL = (0 << 1)
 	SYN_ATT   = (1 << 1)
 	SYN_GO    = (2 << 1)
@@ -23,6 +29,7 @@ const (
 
 // main options
 var (
+	mode        int   = MOD_64 /* default is 64-bit mode */
 	syntax      uint8 = SYN_INTEL
 	output      *os.File
 	out         string
@@ -88,6 +95,17 @@ func main() {
 		} else if len(input_codes) > 3 && input_codes[0:3] == "set" {
 			set := strings.Split(input_codes, "=")
 			switch set[0] {
+			case "set mode":
+				if len(set) < 2 {
+					fmt.Printf("Error: must specify a mode (eg. set mode=32)\n")
+				} else {
+					tmp_mode, _ := strconv.Atoi(set[1])
+					if tmp_mode != MOD_16 && tmp_mode != MOD_32 && tmp_mode != MOD_64 {
+						fmt.Printf("Error: invalid mode\n")
+					} else {
+						mode = tmp_mode
+					}
+				}
 			case "set json":
 				fmt.Printf("json = ")
 				if !json_output {
@@ -152,7 +170,7 @@ func main() {
 			}
 		}
 
-		inst, _ := x86asm.Decode(opcodes, 64)
+		inst, _ := x86asm.Decode(opcodes, mode)
 
 		// inst.Opcode > 0 to be a valid opcode
 		if inst.Opcode == 0 {
