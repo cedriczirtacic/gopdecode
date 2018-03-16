@@ -16,6 +16,7 @@ $
 * `q` or `quit`: quit the application.
 * ```set flavor=[att|go|intel]```: change output syntax (AT&T, Intel or Go Assembly).
 * ```set output=(filepath)```: save output to file.
+* ```set mode=[16|32|64]```: set arch mode (default is 64-bit).
 * ```set colors```: toggle "pretty" printing.
 * ```set json```: toggle print JSON opcode information.
 
