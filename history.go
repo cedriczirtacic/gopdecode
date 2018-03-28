@@ -114,5 +114,11 @@ func (h *History) Save() {
 }
 
 func (h *History) PrintHistory() {
-	fmt.Printf("%v\n", h.cmds)
+	if len(h.cmds) > 0 {
+		for i, c := range h.cmds {
+			fmt.Printf(" %d\t%s\n", i, c)
+		}
+	} else {
+		println("empty\n")
+	}
 }
