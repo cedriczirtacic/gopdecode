@@ -2,18 +2,38 @@
 package main
 
 import (
-	"bufio"
+	//"bufio"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/arch/x86/x86asm"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	_ "unsafe"
+
+	"golang.org/x/arch/x86/x86asm"
 
 	"./create_elf"
 )
+
+/*
+#include <stdio.h>
+#include <termios.h>
+
+int get() {
+	struct termios old, new;
+
+	tcgetattr(0,&old);
+	new=old;
+	new.c_lflag &=~(ECHO | ICANON | IEXTEN);
+	tcsetattr(0,TCSANOW,&new);
+	char c = getchar();
+	tcsetattr(0,TCSANOW,&old);
+	return (int)c;
+}
+*/
+import "C"
 
 const (
 	// architecture modes
@@ -25,6 +45,13 @@ const (
 	SYN_INTEL = (0 << 1)
 	SYN_ATT   = (1 << 1)
 	SYN_GO    = (2 << 1)
+
+	// key codes
+	KBD_TAB   = 9
+	KBD_ENTER = 10
+	KBD_LF    = 13
+
+	PROMPT = "> "
 )
 
 // main options
@@ -76,17 +103,72 @@ func pretty_print(s string) {
 	}
 }
 
+func PrintPrompt() {
+	fmt.Printf("%c[2K\r%s", 27, PROMPT)
+}
+
 func main() {
-	input := bufio.NewScanner(os.Stdin)
+	hist, err := NewHist()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error setting up the history: %s\n", err)
+	}
+	defer hist.Save()
+	hist.Populate()
+
 	for {
-		print("> ")
-		input.Scan()
-		input_codes := input.Text()
+		PrintPrompt()
+		hist.ResetPos()
+		var input []byte
+		for {
+			c := int(C.get())
+			if c < 0x20 || c > 0x7e {
+				if c == KBD_LF || c == KBD_ENTER {
+					println()
+					break
+				}
+				// del
+				if c == 0x7f {
+					if len(input) == 0 {
+						continue
+					}
+					input = input[:len(input)-1]
+					PrintPrompt()
+					print(string(input))
+				}
+				// arrows
+				if c == 0x1b {
+					_ = int(C.get()) // 0x5b
+					c2 := int(C.get())
+					var cmd *string
+					switch c2 {
+					case 0x41:
+						cmd = hist.Up()
+					case 0x42:
+						cmd = hist.Down()
+					}
+
+					PrintPrompt()
+					print(*cmd)
+					input = []byte(*cmd)
+				}
+			} else {
+				fmt.Printf("%c", c)
+				input = append(input, byte(c))
+			}
+		}
+
+		input_codes := string(input)
+
 		if input_codes == "" {
 			continue
+		} else if input_codes == "history" {
+			hist.PrintHistory()
+			continue
 		} else if input_codes == "quit" || input_codes == "q" {
-			os.Exit(0)
-		} else if len(input_codes) > 6 && input_codes[0:6] == "create" {
+			return
+		}
+		hist.AppendCmd(input_codes)
+		if len(input_codes) > 6 && input_codes[0:6] == "create" {
 			create := strings.Split(input_codes, " ")
 			custom_elf, _ = create_elf.Create(create[1])
 			defer custom_elf.Close()
