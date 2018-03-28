@@ -44,7 +44,7 @@ func NewHist() (*History, error) {
 
 func (h *History) Up() *string {
 	i := h.pos
-	if h.pos >= 1 {
+	if h.pos > 0 {
 		h.pos--
 	}
 	return &h.cmds[i]
@@ -59,6 +59,9 @@ func (h *History) Down() *string {
 
 func (h *History) ResetPos() int {
 	h.pos = len(h.cmds) - 1
+	if h.pos == -1 {
+		h.pos = 0
+	}
 	return h.pos
 }
 

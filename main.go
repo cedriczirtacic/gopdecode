@@ -2,7 +2,6 @@
 package main
 
 import (
-	//"bufio"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	_ "unsafe"
 
 	"golang.org/x/arch/x86/x86asm"
 
@@ -118,6 +116,7 @@ func main() {
 	for {
 		PrintPrompt()
 		hist.ResetPos()
+
 		var input []byte
 		for {
 			c := int(C.get())
@@ -142,9 +141,17 @@ func main() {
 					var cmd *string
 					switch c2 {
 					case 0x41:
-						cmd = hist.Up()
+						if len(hist.cmds) > 0 {
+							cmd = hist.Up()
+						} else {
+							continue
+						}
 					case 0x42:
-						cmd = hist.Down()
+						if len(hist.cmds) > 0 {
+							cmd = hist.Down()
+						} else {
+							continue
+						}
 					}
 
 					PrintPrompt()
