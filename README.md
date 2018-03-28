@@ -9,6 +9,9 @@ $ ./gopdecode
 xor cl, al
 > 90
 nop
+> history
+0       30c1
+1       90
 > q
 $
 ```
@@ -19,6 +22,7 @@ $
 * ```set mode=[16|32|64]```: set arch mode (default is 64-bit).
 * ```set colors```: toggle "pretty" printing.
 * ```set json```: toggle print JSON opcode information.
+* ```history```: show history of previous inputs (**.gop_history** file).
 
 JSON output:
 ```json
