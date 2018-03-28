@@ -119,6 +119,6 @@ func (h *History) PrintHistory() {
 			fmt.Printf(" %d\t%s\n", i, c)
 		}
 	} else {
-		println("empty\n")
+		println("empty")
 	}
 }
