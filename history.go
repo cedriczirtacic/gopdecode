@@ -107,6 +107,10 @@ func (h *History) Populate() error {
 	return scan.Err()
 }
 
+func (h *History) Clear() {
+	h.cmds = []string{}
+}
+
 func (h *History) Save() {
 	defer h.file.Close()
 

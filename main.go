@@ -168,8 +168,13 @@ func main() {
 
 		if input_codes == "" {
 			continue
-		} else if input_codes == "history" {
-			hist.PrintHistory()
+		} else if strings.Index(input_codes, "history") == 0 {
+			if len(input_codes) == len("history") {
+				hist.PrintHistory()
+			} else if input_codes == "history clear" {
+				hist.Clear()
+				hist.Save()
+			}
 			continue
 		} else if input_codes == "quit" || input_codes == "q" {
 			return
